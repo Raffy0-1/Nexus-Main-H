@@ -157,9 +157,9 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
+server.listen(process.env.PORT || 5000, '0.0.0.0', () => {
+  console.log(`Server is running on port ${process.env.PORT || 5000}`);
+  console.log(`Swagger Docs available at http://localhost:${process.env.PORT || 5000}/api-docs`);
 });
 
 app.use(notFound);
