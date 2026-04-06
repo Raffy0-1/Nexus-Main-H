@@ -38,7 +38,7 @@ const io = new Server(server, {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const port = parseInt(process.env.PORT || '5000', 10);
 
 app.use(helmet());
 
@@ -157,9 +157,9 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(process.env.PORT || 5000, '0.0.0.0', () => {
-  console.log(`Server is running on port ${process.env.PORT || 5000}`);
-  console.log(`Swagger Docs available at http://localhost:${process.env.PORT || 5000}/api-docs`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Server is running on port ${port}`);
+  console.log(`Swagger Docs available at http://localhost:${port}/api-docs`);
 });
 
 app.use(notFound);
