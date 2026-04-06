@@ -66,7 +66,7 @@ const swaggerOptions = {
       description: 'API endpoints for the Nexus Platform Collaboration Features',
     },
     servers: [
-      { url: `http://localhost:${PORT}` }
+      { url: `http://localhost:${port}` }
     ]
   },
   apis: ['./src/routes/*.ts'], // Automatically generates docs from route comments
