@@ -161,6 +161,7 @@ export const MeetingsPage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Click "Schedule Meeting" to get started.</p>
         </div>
       ) : (
+        <div className="space-y-4">
           {viewMode === 'list' && meetings.map((meeting) => {
             const isOrganizer = meeting.organizer?._id === user?.id || meeting.organizer === user?.id;
             const otherPerson = isOrganizer ? meeting.attendee : meeting.organizer;
