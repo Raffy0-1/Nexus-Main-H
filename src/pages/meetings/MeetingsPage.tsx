@@ -8,6 +8,25 @@ import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../context/useAuth';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { Calendar as BigCalendar, dateFnsLocalizer, Event as CalendarEvent } from 'react-big-calendar';
+import format from 'date-fns/format';
+import parse from 'date-fns/parse';
+import startOfWeek from 'date-fns/startOfWeek';
+import getDay from 'date-fns/getDay';
+import enUS from 'date-fns/locale/en-US';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+const locales = {
+  'en-US': enUS,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
 const statusColors: Record<string, 'primary' | 'success' | 'error' | 'warning' | 'secondary'> = {
   pending: 'warning',
@@ -21,6 +40,7 @@ export const MeetingsPage: React.FC = () => {
   const navigate = useNavigate();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [investors, setInvestors] = useState<any[]>([]);
@@ -104,14 +124,30 @@ export const MeetingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Meetings</h1>
           <p className="text-gray-600">Schedule and manage your calls</p>
         </div>
-        <Button leftIcon={<Plus size={18} />} onClick={() => setShowModal(true)}>
-          Schedule Meeting
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button 
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'list' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+              onClick={() => setViewMode('list')}
+            >
+              List
+            </button>
+             <button 
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition ${viewMode === 'calendar' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+              onClick={() => setViewMode('calendar')}
+            >
+              Calendar
+            </button>
+          </div>
+          <Button leftIcon={<Plus size={18} />} onClick={() => setShowModal(true)}>
+            Schedule
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -125,8 +161,7 @@ export const MeetingsPage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Click "Schedule Meeting" to get started.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {meetings.map((meeting) => {
+          {viewMode === 'list' && meetings.map((meeting) => {
             const isOrganizer = meeting.organizer?._id === user?.id || meeting.organizer === user?.id;
             const otherPerson = isOrganizer ? meeting.attendee : meeting.organizer;
             const otherName = otherPerson
@@ -196,6 +231,25 @@ export const MeetingsPage: React.FC = () => {
               </Card>
             );
           })}
+          
+          {viewMode === 'calendar' && (
+            <Card className="border border-gray-200 shadow-sm p-4 w-full">
+               <BigCalendar
+                  localizer={localizer}
+                  events={meetings.map(m => ({
+                    title: m.title,
+                    start: new Date(m.startTime),
+                    end: new Date(m.endTime),
+                    resource: m
+                  }))}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: '600px' }}
+                  views={['month', 'week', 'day']}
+                  defaultView="month"
+               />
+            </Card>
+          )}
         </div>
       )}
 

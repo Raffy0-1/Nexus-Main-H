@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import fs from 'fs/promises';
 import path from 'path';
 import { createNotification } from './notificationController';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 export const uploadDocument = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const authReq = req as AuthRequest;
@@ -15,8 +16,9 @@ export const uploadDocument = async (req: Request, res: Response, next: NextFunc
 
     const { title } = req.body;
     
-    // In a real app we'd upload to S3. Here we mock via a local /uploads path or static URL
-    const fileUrl = `/uploads/${req.file.filename}`;
+    // Check if multer-s3 injected `location` URL
+    const isS3 = !!(req.file as any).location;
+    const fileUrl = isS3 ? (req.file as any).location : `/uploads/${req.file.filename}`;
     
     const document = await Document.create({
       uploader: authReq.user._id,
@@ -85,12 +87,31 @@ export const deleteDocument = async (req: Request, res: Response, next: NextFunc
       return;
     }
     
-    // Actually delete the physical file
-    const filePath = path.join(__dirname, '../../', document.fileUrl);
-    try {
-      await fs.unlink(filePath);
-    } catch (fsError: any) {
-      console.warn(`Could not delete file ${filePath}: ${fsError.message}`);
+    // Delete physical file (S3 or local disk)
+    if (document.fileUrl.startsWith('http')) {
+        if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_S3_BUCKET_NAME) {
+          const s3 = new S3Client({
+            region: process.env.AWS_REGION || 'us-east-1',
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            }
+          });
+          const key = document.fileUrl.split('/').pop();
+          if (key) {
+             await s3.send(new DeleteObjectCommand({
+               Bucket: process.env.AWS_S3_BUCKET_NAME,
+               Key: key
+             }));
+          }
+        }
+    } else {
+        const filePath = path.join(__dirname, '../../', document.fileUrl);
+        try {
+          await fs.unlink(filePath);
+        } catch (fsError: any) {
+          console.warn(`Could not delete file ${filePath}: ${fsError.message}`);
+        }
     }
     
     await Document.deleteOne({ _id: document._id });
