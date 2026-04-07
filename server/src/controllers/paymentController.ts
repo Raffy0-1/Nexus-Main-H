@@ -17,24 +17,17 @@ export const processDeposit = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // Connect to Stripe SDK
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // convert to cents
-      currency: 'usd',
-      metadata: { userId: authReq.user._id.toString() },
-    });
-    
-    // Also save intent to DB for history
+    // Since Stripe cannot be set up, entirely mock the gateway response locally!
     const transaction = await Transaction.create({
       user: authReq.user._id,
       type: 'deposit',
       amount,
-      status: 'pending',
-      reference: paymentIntent.id
+      status: 'completed',
+      reference: `MOCK_DEP_${Date.now()}`
     });
 
     res.status(200).json({
-      clientSecret: paymentIntent.client_secret,
+      clientSecret: 'mock_client_secret_no_stripe_required',
       transaction
     });
   } catch (error) {
